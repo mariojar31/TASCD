@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TASCD",
-    "slug": "TASCD",
+    "slug": "tascd",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,6 +11,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "scheme": "tascd",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -24,7 +25,13 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "bundler":"metro",
+      "favicon": "./assets/favicon.png",
+      "output": "static",
+      "entryPoint": "./app/_layout.jsx"
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
