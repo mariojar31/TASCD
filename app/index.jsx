@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { version } from 'react';
 import {useEffect, useState, useLayoutEffect} from 'react';
 import {COLORS, SIZES, FONT} from '../constants/index.js'
 import {
@@ -12,7 +12,7 @@ import {
     Pressable,
     Alert,
     FlatList, 
-    Dimensions
+    Dimensions, Modal
   } from "react-native";
 
   import { Feather } from '@expo/vector-icons';
@@ -37,6 +37,7 @@ const HomeScreen = () => {
     const navigation = useNavigation();
     const [quote, setQuote] = useState('');
     const [quoteText, setQuoteText] = useState('');
+    const [shownModal, setShownModal]=useState(false);
 
     const [isLoading, setIsLoading] = useState(true);
     
@@ -46,7 +47,15 @@ const HomeScreen = () => {
 
     const viewReflection = ()=>{
       navigation.navigate('Reflection');
-    }
+    };
+
+    const saveVerses = async(version,book,chapter,verses_,data)=>{
+      try{
+          await AsyncStorage.setItem(`${version}_${book}_${chapter}${verses_!==''?`_${verses_}`:verses_}`,JSON.stringify(data));
+      }catch(error){
+          console.error('Error saving verses: ',error);
+      }
+  };
 
     useEffect(()=>{
       const fetchData = async()=>{
@@ -58,20 +67,39 @@ const HomeScreen = () => {
           const [book,chapter,verse] = utilitySplit(item.quote);
 
           if(currentVersion){
-            const data = await getVerse(currentVersion,book,chapter,verse);
-            
-            const dataVerses=data.text;
-            const cita = data.quote;
-            if(dataVerses.length>1){
-              const verses = dataVerses.map(verse => verse.verse);
-              setQuoteText(verses.join(' '));
+
+            const storedVerse = await AsyncStorage.getItem(`${currentVersion}_${book}_${chapter}_${verse}`);
+
+            if(storedVerse){
+              if(storedVerse.length>1){
+                const  verses = JSON.parse(storedVerse).map(verse=>verse.verse);
+                setQuoteText(verses.join(' '));
+                setQuote(`${book} ${chapter}:${verse}`);
+              }else{
+                const verses = JSON.parse(storedVerse).verse;
+                setQuoteText(verses);
+                setQuote(`${book} ${chapter}:${verse}`);
+              }
             }else{
-              const verses = dataVerses.verse;
-              setQuoteText(verses);
+              const data = await getVerse(currentVersion,book,chapter,verse);
+            
+              const dataVerses=data.text;
+              const cita = data.quote;
+              if(dataVerses.length>1){
+                const verses = dataVerses.map(verse => verse.verse);
+                setQuoteText(verses.join(' '));
+                saveVerses(currentVersion,book,chapter,verse,dataVerses);
+
+              }else{
+                const verses = dataVerses.verse;
+                setQuoteText(verses);
+                saveVerses(currentVersion,book,chapter,verse,dataVerses);
+              }
+              setQuote(cita);
+              
+
             }
         
-            
-            setQuote(cita);
             setIsLoading(false);
           }
 
@@ -114,7 +142,7 @@ const HomeScreen = () => {
                   <Image source={require("../assets/icon.png")} style={{width:60,height:60}}/>
                   <Text style={styles.topMenu}>TASCD</Text>
                   <View style={{flexDirection:"row"}}>
-                      <Pressable onPress={() => console.log('Boton Ayuda presionado')}
+                      <Pressable onPress={() => setShownModal(true)}
                                   style={({pressed}) => [
                                       pressed?styles.btnPressed:styles.btnCustom
                                   ]}>
@@ -139,7 +167,7 @@ const HomeScreen = () => {
               </Card>
   
               <View style={styles.buttonList}>
-                  <Pressable onPress={()=>console.log("Btn 1")} style={({pressed})=>[pressed?styles.buttonPressed:styles.button]}>
+                  <Pressable onPress={()=>navigation.navigate('MySpaceWG/index')} style={({pressed})=>[pressed?styles.buttonPressed:styles.button]}>
                       <FontAwesome6 name="edit" size={50} color={COLORS.tertiary} style={{textAlign:"center"}} />
                       <Text style={{color:COLORS.tertiary, fontSize:SIZES.medSmall, maxWidth:75, textAlign: "center"}}>
                           Mi Espacio con Dios
@@ -160,7 +188,38 @@ const HomeScreen = () => {
               </View>
           </View>
         </ImageBackground>
+        <Modal 
+        animationType="slide"
+        transparent={true}
+        visible={shownModal}>
+          <Pressable onPress={()=>setShownModal(!shownModal)}>
+          <View style={{height:"100vh", width:"100vw", backgroundColor:"rgba(0,0,0,0.5)", alignItems:"center", justifyContent:"center" }}>
+            <View style={{       
+              backgroundColor: COLORS.secondary,
+              borderRadius: 20,
+              alignItems: 'center',
+              justifyContent:"center",
+              shadowColor: '#000',
+              width:'80vw',
+              height:'60vh', 
+              padding:"5vw"}}>
+                <View style={{width:"100%", height:"100%", justifyContent:"center",alignItems:"center"}}>
+                  <Text style={{textAlign:"center", height:"100%", fontFamily:FONT.bold, fontSize:SIZES.medium, color:COLORS.secondarylight}}>
+                    {`Designed & Developed By: \nMario Acendra\n\nDevocional: \nBlog Devocional Centro Biblico Internacional.\n(https://www.cbint.org/devocional)\n\nImagen Background: FreePic (http://www.freepic.com/)\n\nTextos Biblicos: Reina Verela Revisada 1960 - Biblia Versión Interdenominacional
+                    `}
+                  </Text>
+                  <Pressable onPress={()=>setShownModal(!shownModal)}>
+                    <Text style={{padding:"2vw", borderRadius:"10px", backgroundColor:COLORS.primarytrans}}>Close</Text>
+                  </Pressable>
+                </View>
+
+            </View>
+          </View>
+          </Pressable>
+
+        </Modal>
       </SafeAreaView>
+      
     );
   };
 

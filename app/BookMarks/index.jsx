@@ -89,13 +89,11 @@ const BookMarks = ()=>{
     return(
         <SafeAreaView style={{ flex: 1, backgroundColor: 'beige', marginTop: StatusBar.currentHeight || 0 }}>
             <View style={styles.container}>
-                <Text style={styles.h1}>Capitulos Marcados</Text>
-                <ScrollView style={styles.List}>
-                    {bookMarksChapters.length!==0? bookMarksChapters.map((mark,index)=><Pressable onPress={()=>handlePress(mark.header)} key={index} style={styles.Pressable}><Text style={styles.textItem}>{mark.header}</Text></Pressable>):<Text>Sin Capitulos Marcados</Text>}
-                </ScrollView>
-                <Text style={styles.h1}>Versos Marcados</Text>
+
                 <ScrollView style={styles.List}>
                     {bookMarksVerses.length!==0? bookMarksVerses.map((mark, index)=><Pressable onPress={()=>handlePress(mark.header)} key={index} style={styles.Pressable}><Text style={styles.textItem}>{mark.header}</Text></Pressable>):<Text>Sin Versos Marcados</Text>}
+                    {bookMarksChapters.length!==0? bookMarksChapters.map((mark,index)=><Pressable onPress={()=>handlePress(mark.header)} key={index} style={styles.Pressable}><Text style={styles.textItem}>{mark.header}</Text></Pressable>):<Text>Sin Capitulos Marcados</Text>}
+
                 </ScrollView>    
             </View>
         </SafeAreaView>

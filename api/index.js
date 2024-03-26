@@ -82,7 +82,7 @@ const obtainDailyReflection = async(date,time)=>{
 };
 
 const utilitySplit=(text)=>{
-
+    console.log(text);
     const splitText = text.split(' ');
     let Book = '';
     let Chapter = '';

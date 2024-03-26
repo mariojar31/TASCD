@@ -22,16 +22,25 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.mariojar31.tascd"
     },
     "web": {
-      "bundler":"metro",
+      "bundler": "metro",
       "favicon": "./assets/favicon.png",
       "output": "static",
       "entryPoint": "./app/_layout.jsx"
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "fe710ab7-170d-4b99-871d-0dc32fe8e700"
+      }
+    }
   }
 }

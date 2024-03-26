@@ -16,6 +16,9 @@ import {
     ScrollView
   } from "react-native";
 
+  import { createNativeStackNavigator } from '@react-navigation/native-stack';
+  import { NavigationContainer } from '@react-navigation/native';
+
   import { Feather } from '@expo/vector-icons';
   import { Entypo } from '@expo/vector-icons';
   import { FontAwesome6 } from '@expo/vector-icons';
@@ -23,27 +26,38 @@ import {
   import styles from "./style.js";
   import Card from "../../components/card/index.jsx";
   import { StatusBar } from "expo-status-bar";
-  import { Stack } from 'expo-router';
   import { useNavigation, router, Link } from 'expo-router';
   import HeaderRightCustome from '../../components/HeaderRightCustome/index.jsx';
   import AsyncStorage from '@react-native-async-storage/async-storage';
 
   import { getVerse, obtainDailyReflection, utilitySplit } from '../../api/index.js';
+  import { Ionicons } from '@expo/vector-icons';
+  import ReflectionQuiz from './ReflectionQuiz.jsx';
+  import HomeScreen from '../index.jsx';
+  
 
   const imgBackground = require("../../assets/background/bg.png");
   const time = new Date().getHours();
   const currentDate = new Date().toLocaleString('en-CO').slice(0,10);
 
 
+  const Reflection = ({navigation})=>{
 
-  const Reflection = ()=>{
-
-    const navigation = useNavigation()
-    const [isLoading, setIsLoading]=useState(false);
+    const [isLoading, setIsLoading]=useState(true);
     const [currentVersion, setCurrentVersion] = useState(null);
     const [dailyWord, setDailyWord]=useState('');
     const [verseNum, setVerseNum]=useState(null);
     const [idDevotional, setIdDevotional]=useState(null);
+
+    const GoBackButton = ()=>{
+        const nav = useNavigation();
+        return(
+            <Pressable style={{padding:"5vw"}} onPress={()=>nav.push('Home')}>
+                <Ionicons name="arrow-back" size={28} color={COLORS.primary} />
+            </Pressable>
+            
+        )
+    }
 
     useEffect(() => {
         navigation.setOptions({
@@ -53,6 +67,7 @@ import {
           headerTitleStyle: { color: COLORS.primary },
           headerRight: () => <HeaderRightCustome menuDots={true} bookMarks={false} marks={false} isMarked={false} onPressMark={()=>null} />,
           headerTransparent: true,
+          headerLeft: ()=> <GoBackButton/>,
         });
       }, [navigation]);
 
@@ -85,11 +100,23 @@ import {
             setVerseNum(verse[0]);
             saveParams(book,chapter);
 
+            const verses_ = await AsyncStorage.getItem(`${currentVersion}_${book}_${chapter}_${verse}`);
+            const verses=JSON.parse(verses_);
 
-            const verses = await getVerse(currentVersion,book,chapter,verse);
+            if(verses){
+                const Quote = `${book} ${chapter}: ${verse}`;
+                setDailyWord({header:Quote,text:verses,reflection:reflection, ref:ref});
+                setIsLoading(false);
 
-            setDailyWord({header:verses.quote,text:verses.text,reflection:reflection, ref:ref});
+            }else{
+                const verses = await getVerse(currentVersion,book,chapter,verse);
 
+                setDailyWord({header:verses.quote,text:verses.text,reflection:reflection, ref:ref});
+                setIsLoading(false);
+                saveVerses(book,chapter,verse,verses.text);
+            }
+
+            
             
             }catch(error){
                 console.error(error);
@@ -113,14 +140,14 @@ import {
 
     const saveVerses = async(book,chapter,verses_,data)=>{
         try{
-            await AsyncStorage.setItem(`${version}_${book}_${chapter}${verses_!==''?`_${verses_}`:verses_}`,JSON.stringify(data));
+            await AsyncStorage.setItem(`${currentVersion}_${book}_${chapter}${verses_!==''?`_${verses_}`:verses_}`,JSON.stringify(data));
         }catch(error){
             console.error('Error saving verses: ',error);
         }
     };
 
     const openFullChapter = ()=>{
-        router.push(`Bible/Chapters/Verses#${verseNum}`)
+        router.push(`Bible/Chapters/Verses#${verseNum}`);
     }
 
     return(
@@ -153,12 +180,12 @@ import {
                             <View style={{padding:"2vw"}}>
                                 <Pressable onPress={openFullChapter}>
                                     <ScrollView style={{height:"20vh"}}>
-                                        {dailyWord.text?
+                                        {isLoading?<Text style={{textAlign:"center", color:COLORS.secondarylight, fontFamily:FONT.bold, fontSize:SIZES.medium}}>{'\n\n\n'}Loading...</Text>:(dailyWord.text?
                                             dailyWord.text.map((verse, index)=>
                                             <Text key={index} style={{textAlign:"center", color:COLORS.secondarylight, fontFamily:FONT.bold, fontSize:SIZES.medium}}>
                                                 {verse.verse}
                                             </Text>
-                                            ):null
+                                            ):null)
                                         }
                                     </ScrollView>
                                 </Pressable>
@@ -175,13 +202,11 @@ import {
                     </View>
 
                     <View style={styles.ButtonContainer}>
-                        <Link href={{pathname:'Reflection/ReflectionQuiz',params:{id:idDevotional,ref:dailyWord.ref}}}>
-                            <Pressable style={({pressed})=>[pressed?styles.btnPressed:styles.Button]}>
+                            <Pressable onPress={()=>navigation.navigate('ReflectionTASCD',{id:idDevotional,ref:dailyWord.ref})} style={({pressed})=>[pressed?styles.btnPressed:styles.Button]}>
                                 <Text  style={styles.Button}>
                                     Mi Reflexíon Personal
                                 </Text>
                             </Pressable>
-                        </Link>
                     </View> 
                 </View>
             </ImageBackground>
@@ -191,4 +216,18 @@ import {
     )
   }
 
-  export default Reflection;
+  const Stack = createNativeStackNavigator();
+
+  const MyStack = ()=>{
+    return(
+        <NavigationContainer independent="true">
+            <Stack.Navigator initialRouteName='Reflection'>
+                <Stack.Screen name='Reflection' component={Reflection} options={{title:'Reflection'}}/>
+                <Stack.Screen name='ReflectionTASCD' component={ReflectionQuiz} options={{headerShown:false}}/>
+                <Stack.Screen name='Home' component={HomeScreen}/>
+            </Stack.Navigator>
+        </NavigationContainer>
+    )
+  }
+
+  export default MyStack;

@@ -9,7 +9,6 @@ const styles = StyleSheet.create({
     },
 
     List:{
-        maxHeight: "50%", 
         height: "auto",
         minHeight:"10vw",
         marginHorizontal: "4vw",
